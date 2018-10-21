@@ -1,0 +1,145 @@
+---
+title: Quantile Normalization and Inverse Normal Transform
+author: Bo Sun
+date: '2018-10-20'
+slug: quantile-normalization-and-inverse-normal-transform
+categories:
+  - R
+tags:
+  - modeling
+  - plot
+  - R
+  - statistics
+---
+
+
+
+<p>[image] # Caption (optional) caption = “Image credit: <a href="https://unsplash.com/photos/CpkOjOcXdUY"><strong>Unsplash</strong></a>”</p>
+<p># Focal point (optional) # Options: Smart, Center, TopLeft, Top, TopRight, Left, Right, BottomLeft, Bottom, BottomRight focal_point = “”</p>
+<div id="dependency" class="section level2">
+<h2>Dependency</h2>
+<p>This post demonstrate the following:</p>
+<ul>
+<li>Quantile Normalization implemented in R package <code>preprocessCore</code>.</li>
+<li>Inverse-Normal-Transform implemented in <code>RNOmni</code></li>
+</ul>
+<pre class="r"><code>source(&quot;http://www.bioconductor.org/biocLite.R&quot;)
+biocLite(&quot;preprocessCore&quot;)
+install.packages(&quot;RNOmni&quot;)</code></pre>
+<pre class="r"><code>library(preprocessCore)
+library(RNOmni)</code></pre>
+</div>
+<div id="general-princinples" class="section level2">
+<h2>General Princinples</h2>
+<div id="quantile-normalization" class="section level4">
+<h4>Quantile Normalization</h4>
+<p>Simplest way to put it: Quantile normalization is a technique for making different distributions have the same statistical property by “aligning”&quot; their quantiles. <a href="https://www.youtube.com/watch?v=ecjN6Xpv6SE">Statquest</a> has a good video explaining this technique. Here is the video: {{% youtube "ecjN6Xpv6SE" %}}</p>
+</div>
+<div id="inverse-normal-transform" class="section level4">
+<h4>Inverse-Normal-Transform</h4>
+<p>Inverse normal transformation, a.k.a <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2921808/"><em>ranked based Inverse-Normal-Transformation(INT)</em></a>, is a theoretically complicated method. But again, the simplest way to put it: INT increase the “normality” of the distribution, by aligning the quantiles to the standard normal quantiles. As a result we can now apply statistal models that have a normality assumption.</p>
+</div>
+<div id="be-cautious" class="section level4">
+<h4>Be Cautious!</h4>
+<p>Normalization techeniques are highly application specific. Blindly appling them may create as many problems as they solve. If you don’t know the “right”&quot; one to use, you’d better do some test-ride and select the one that is statistically better(e.g. Cross-Validation, etc.).</p>
+</div>
+</div>
+<div id="set-plot-parameters" class="section level2">
+<h2>Set plot parameters</h2>
+<pre class="r"><code>library(RColorBrewer)
+qual_col_pals = brewer.pal.info[brewer.pal.info$category == &#39;qual&#39;,]
+col_vec = unlist(mapply(brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals))) # 74 colors in RcolorBrewer</code></pre>
+</div>
+<div id="load-data" class="section level2">
+<h2>Load Data</h2>
+<p>The data in this post is a <code>data.frame</code> where rows are genes and columns are patients, the measurement is <span class="math inline">\(log_2(rpkm + 1)\)</span>. It’s straghtforward to understand so I’d rather not to bother to provide a link for it.</p>
+<pre class="r"><code>data = read.csv(&quot;/Users/bos/R-workspace/2.eQTL/large500_expr&quot;)
+expr = as.matrix(data[,-1])  # 1st column is gene id</code></pre>
+</div>
+<div id="quantile-transformation" class="section level2">
+<h2>Quantile Transformation</h2>
+<div id="before-quantile-transformation" class="section level4">
+<h4>before quantile transformation</h4>
+<pre class="r"><code>plot(density(unlist(expr[, 1])), col=col_vec[1])
+for(i in 2:40) lines(density(expr[,i]), col=col_vec[i])</code></pre>
+<p><img src="/post/quantile-nomrlization-and-inverse-normal-transform/index_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
+</div>
+<div id="after-quantile-transformation" class="section level4">
+<h4>after quantile transformation</h4>
+<pre class="r"><code>expr.qt &lt;- preprocessCore::normalize.quantiles(as.matrix(expr))
+plot(density(expr.qt[,1]), col = col_vec[1])
+for(i in 2:40) lines(density(expr.qt[,i]), col=col_vec[i])</code></pre>
+<p><img src="/post/quantile-nomrlization-and-inverse-normal-transform/index_files/figure-html/unnamed-chunk-7-1.png" width="672" /></p>
+<p>Note here most part of those transformed distributions land on top of each other, but if the variability is larger in your data, then near the tail the distributions will not be perfectly same which is good because it keeps the variability.<br />
+However, <strong>Quantile Normalization can not remove batch effect</strong>, see <a href="http://jtleek.com/genstats/inst/doc/02_05_normalization.html">Jeff’s post</a></p>
+</div>
+</div>
+<div id="inverse-normal-transformation" class="section level2">
+<h2>Inverse-Normal-Transformation</h2>
+<div id="before" class="section level4">
+<h4>before</h4>
+<pre class="r"><code>plot(density(expr[1,]), col = col_vec[1])
+for(i in 2:40) lines(density(expr[i, ]), col = col_vec[i])</code></pre>
+<p><img src="/post/quantile-nomrlization-and-inverse-normal-transform/index_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
+</div>
+<div id="after" class="section level3">
+<h3>After</h3>
+<pre class="r"><code>expr.int = t(apply(expr, 1, RNOmni::rankNormal))
+plot(density(expr.int[1,]), col = col_vec[1])
+for(i in 2:40) lines(density(expr.int[i, ]), col = col_vec[i])</code></pre>
+<p><img src="/post/quantile-nomrlization-and-inverse-normal-transform/index_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
+<p>As you can see, the distribution are normalized toward std. normal, and variability of the tails are preserved.(You may expect a different result with this plot, because my data here is RNA-seq data with heavy-tails, for moderate-tailed data, it should become more similar to a std. normal. )</p>
+</div>
+</div>
+<div id="session-information" class="section level2">
+<h2>Session Information</h2>
+<pre class="r"><code>if (!requireNamespace(&quot;devtools&quot;)) install.packages(&quot;devtools&quot;)</code></pre>
+<pre><code>## Loading required namespace: devtools</code></pre>
+<pre class="r"><code>devtools::session_info()</code></pre>
+<pre><code>## Session info -------------------------------------------------------------</code></pre>
+<pre><code>##  setting  value                       
+##  version  R version 3.5.0 (2018-04-23)
+##  system   x86_64, darwin15.6.0        
+##  ui       X11                         
+##  language (EN)                        
+##  collate  en_US.UTF-8                 
+##  tz       America/Los_Angeles         
+##  date     2018-10-20</code></pre>
+<pre><code>## Packages -----------------------------------------------------------------</code></pre>
+<pre><code>##  package        * version date       source         
+##  abind            1.4-5   2016-07-21 CRAN (R 3.5.0) 
+##  backports        1.1.2   2017-12-13 CRAN (R 3.5.0) 
+##  base           * 3.5.0   2018-04-24 local          
+##  blogdown         0.8     2018-07-15 CRAN (R 3.5.0) 
+##  bookdown         0.7     2018-02-18 CRAN (R 3.5.0) 
+##  codetools        0.2-15  2016-10-05 CRAN (R 3.5.0) 
+##  compiler         3.5.0   2018-04-24 local          
+##  datasets       * 3.5.0   2018-04-24 local          
+##  devtools         1.13.6  2018-06-27 CRAN (R 3.5.0) 
+##  digest           0.6.15  2018-01-28 CRAN (R 3.5.0) 
+##  evaluate         0.11    2018-07-17 CRAN (R 3.5.0) 
+##  foreach          1.4.4   2017-12-12 CRAN (R 3.5.0) 
+##  graphics       * 3.5.0   2018-04-24 local          
+##  grDevices      * 3.5.0   2018-04-24 local          
+##  htmltools        0.3.6   2017-04-28 CRAN (R 3.5.0) 
+##  iterators        1.0.10  2018-07-13 CRAN (R 3.5.0) 
+##  knitr            1.20    2018-02-20 CRAN (R 3.5.0) 
+##  magrittr         1.5     2014-11-22 CRAN (R 3.5.0) 
+##  memoise          1.1.0   2017-04-21 CRAN (R 3.5.0) 
+##  methods        * 3.5.0   2018-04-24 local          
+##  plyr             1.8.4   2016-06-08 CRAN (R 3.5.0) 
+##  preprocessCore * 1.42.0  2018-05-01 Bioconductor   
+##  RColorBrewer   * 1.1-2   2014-12-07 CRAN (R 3.5.0) 
+##  Rcpp             0.12.18 2018-07-23 cran (@0.12.18)
+##  rmarkdown        1.10    2018-06-11 CRAN (R 3.5.0) 
+##  RNOmni         * 0.4.0   2018-05-16 CRAN (R 3.5.0) 
+##  rprojroot        1.3-2   2018-01-03 CRAN (R 3.5.0) 
+##  stats          * 3.5.0   2018-04-24 local          
+##  stringi          1.2.4   2018-07-20 CRAN (R 3.5.0) 
+##  stringr          1.3.1   2018-05-10 CRAN (R 3.5.0) 
+##  tools            3.5.0   2018-04-24 local          
+##  utils          * 3.5.0   2018-04-24 local          
+##  withr            2.1.2   2018-03-15 CRAN (R 3.5.0) 
+##  xfun             0.3     2018-07-06 CRAN (R 3.5.0) 
+##  yaml             2.2.0   2018-07-25 CRAN (R 3.5.0)</code></pre>
+</div>

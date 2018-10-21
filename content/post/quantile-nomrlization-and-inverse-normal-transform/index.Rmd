@@ -1,0 +1,106 @@
+---
+title: Quantile Normalization and Inverse Normal Transform
+author: Bo Sun
+date: '2018-10-20'
+slug: quantile-normalization-and-inverse-normal-transform
+categories:
+  - R
+tags:
+  - modeling
+  - plot
+  - R
+  - statistics
+---
+
+[image]
+  # Caption (optional)
+  caption = "Image credit: [**Unsplash**](https://unsplash.com/photos/CpkOjOcXdUY)"
+
+  # Focal point (optional)
+  # Options: Smart, Center, TopLeft, Top, TopRight, Left, Right, BottomLeft, Bottom, BottomRight
+  focal_point = ""
+
+## Dependency
+This post demonstrate the following:
+
+  * Quantile Normalization implemented in R package `preprocessCore`.
+  * Inverse-Normal-Transform implemented in `RNOmni`
+
+```{r eval = F}
+source("http://www.bioconductor.org/biocLite.R")
+biocLite("preprocessCore")
+install.packages("RNOmni")
+```
+
+```{r}
+library(preprocessCore)
+library(RNOmni)
+```
+
+## General Princinples
+#### Quantile Normalization
+Simplest way to put it: Quantile normalization is a technique for making different distributions have the same statistical property by "aligning"" their quantiles. 
+[Statquest](https://www.youtube.com/watch?v=ecjN6Xpv6SE) has a good video explaining this technique. Here is the video:
+```{r, echo =F}
+blogdown::shortcode('youtube', 'ecjN6Xpv6SE')
+```
+
+#### Inverse-Normal-Transform
+Inverse normal transformation, a.k.a [_ranked based Inverse-Normal-Transformation(INT)_](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2921808/), is a theoretically complicated method. But again, the simplest way to put it: INT 
+increase the "normality" of the distribution, by aligning the quantiles to the standard normal quantiles. As a result we can now apply statistal models that have a normality assumption.
+
+#### Be Cautious!
+Normalization techeniques are highly application specific. Blindly appling them may create as many problems as they solve. If you don't know the "right"" one to use, you'd better do some test-ride and select the one that is statistically better(e.g. Cross-Validation, etc.).
+
+## Set plot parameters
+```{r}
+library(RColorBrewer)
+qual_col_pals = brewer.pal.info[brewer.pal.info$category == 'qual',]
+col_vec = unlist(mapply(brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals))) # 74 colors in RcolorBrewer
+```
+
+## Load Data
+The data in this post is a `data.frame` where rows are genes and columns are patients, the measurement is $log_2(rpkm + 1)$. It's straghtforward to understand so I'd rather not to bother to provide a link for it.
+```{r}
+data = read.csv("/Users/bos/R-workspace/2.eQTL/large500_expr")
+expr = as.matrix(data[,-1])  # 1st column is gene id
+```
+
+## Quantile Transformation
+#### before quantile transformation 
+```{r}
+plot(density(unlist(expr[, 1])), col=col_vec[1])
+for(i in 2:40) lines(density(expr[,i]), col=col_vec[i])
+```
+
+#### after quantile transformation
+```{r}
+expr.qt <- preprocessCore::normalize.quantiles(as.matrix(expr))
+plot(density(expr.qt[,1]), col = col_vec[1])
+for(i in 2:40) lines(density(expr.qt[,i]), col=col_vec[i])
+```
+
+Note here most part of those transformed distributions land on top of each other, but if the variability is larger in your data, then near the tail the distributions will not be perfectly same which is good because it keeps the variability.  
+However, **Quantile Normalization can not remove batch effect**, see [Jeff's post](http://jtleek.com/genstats/inst/doc/02_05_normalization.html)
+
+##Inverse-Normal-Transformation
+#### before
+```{r}
+plot(density(expr[1,]), col = col_vec[1])
+for(i in 2:40) lines(density(expr[i, ]), col = col_vec[i])
+```
+
+### After
+```{r}
+expr.int = t(apply(expr, 1, RNOmni::rankNormal))
+plot(density(expr.int[1,]), col = col_vec[1])
+for(i in 2:40) lines(density(expr.int[i, ]), col = col_vec[i])
+```
+
+As you can see, the distribution are normalized toward std. normal, and variability of the tails are preserved.(You may expect a different result with this plot, because my data here is RNA-seq data with heavy-tails, for moderate-tailed data, it should become more similar to a std. normal.  )
+
+## Session Information
+```{r}
+if (!requireNamespace("devtools")) install.packages("devtools")
+devtools::session_info()
+```
