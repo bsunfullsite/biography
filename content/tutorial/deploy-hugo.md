@@ -93,7 +93,7 @@ The initial setup depends on what your current situation is. Most likely, either
 1. you already have your hugo site committed and pushed up to the `blog` repository
    on GitHub.
 
-### Setup When Nothing is Committed
+### Setup When Nothing is Committed(select one of this two)
 
 Create two new, empty repositories on GitHub:
 
@@ -110,7 +110,7 @@ Initialize a git repository and add the remote:
     $ git init
     $ git remote add origin git@github.com:<username>/blog.git
 
-### Setup When You've Already Committed and Pushed
+### Setup When You've Already Committed and Pushed(select one of this two)
 
 If you've already got your Hugo site committed to source control and pushed up to
 GitHub, then the process is similar, except that you need to make room for the submodule
