@@ -5,7 +5,7 @@ draft = false
 
 # Authors. Comma separated list, e.g. `["Bob Smith", "David Jones"]`.
 authors = ["Bo Sun(co-first)","Pietro E. Cippà(co-first)", "Jing Liu", 
-"Liang Chen", "Maarten Naesens","Andrew P. McMahon(correspond)"]
+"Liang Chen", "Maarten Naesens","Andrew P. McMahon"]
 
 # Publication type.
 # Legend:
@@ -42,15 +42,9 @@ projects = ["research"]
 tags = ["R", "research", "Shiny"]
 
 # Links (optional).
-url_pdf = "http://eprints.soton.ac.uk/352095/1/Cushen-IMV2013.pdf"
-url_preprint = "http://eprints.soton.ac.uk/352095/1/Cushen-IMV2013.pdf"
-url_code = "#"
-url_dataset = "#"
-url_project = "#"
-url_slides = "#"
-url_video = "#"
-url_poster = "#"
-url_source = "#"
+url_pdf = "https://insight.jci.org/articles/view/123151/pdf"
+url_preprint = "https://insight.jci.org/articles/view/123151?utm_source=TrendMD&utm_medium=cpc&utm_campaign=JCI_Insight_TrendMD_0"
+url_GeneViz = "https://lianglabusc.shinyapps.io/shinyapp/"
 
 # Custom links (optional).
 #   Uncomment line below to enable. For multiple links, use the form `[{...}, {...}, {...}]`.
